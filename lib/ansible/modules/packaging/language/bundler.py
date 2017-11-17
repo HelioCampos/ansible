@@ -101,6 +101,12 @@ options:
         information
     required: false
     default: null
+  quiet:
+    description:
+      - If set only outputs warning and errors.
+    required: false
+    choices: [yes, no]
+    default: "no"
 author: "Tim Hoiberg (@thoiberg)"
 '''
 
@@ -129,6 +135,12 @@ EXAMPLES='''
 - bundler:
     state: latest
     chdir: ~/rails_project
+
+# Updates Gemfile quietly
+- bundler:
+    state: latest
+    chdir: ~/rails_project
+    quiet: yes
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -157,6 +169,7 @@ def main():
             gem_path=dict(default=None, required=False, type='path'),
             binstub_directory=dict(default=None, required=False, type='path'),
             extra_args=dict(default=None, required=False),
+            quiet=dict(default=False, required=False, type='bool'),
         ),
         supports_check_mode=True
         )
@@ -172,6 +185,7 @@ def main():
     gem_path = module.params.get('gem_path')
     binstub_directory = module.params.get('binstub_directory')
     extra_args = module.params.get('extra_args')
+    quiet = module.params.get('quiet')
 
     cmd = get_bundler_executable(module)
 
@@ -206,6 +220,9 @@ def main():
 
     if extra_args:
         cmd.extend(extra_args.split(' '))
+
+    if quiet:
+        cmd.append('--quiet')
 
     rc, out, err = module.run_command(cmd, cwd=chdir, check_rc=True)
 
